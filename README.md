@@ -1,40 +1,46 @@
-# 全球紧缺商品 Dashboard
+﻿# 全球紧缺商品与关键产品 Dashboard
 
-本项目生成一个可直接双击打开的本地 Dashboard，展示：
+## 入口
 
-- 全球最紧缺 10 大商品
-- 当前缺口/市场压力
-- 未来缺口预测
-- 关键驱动因素
-- 对应中国上市企业与股票代码
-- 公开来源与更新时间
+- GitHub Pages 入口文件：`index.html`
+- 兼容旧链接：`dashboard.html` 会自动跳转到 `index.html`
+- 页面数据文件：`data/latest.json`
 
-## 目录
+## 当前更新方式
 
-- `dashboard.html`：最终看板，双击即可打开
-- `assets/`：页面样式和脚本
-- `scripts/update_dashboard.py`：抓取最新公开来源并重建看板
-- `scripts/register_daily_update.ps1`：注册 Windows 每日计划任务
+这个项目已经改成手动刷新页面数据：
 
-## 立即刷新一次
+1. 打开网页
+2. 点击“更新数据”按钮
+3. 页面会重新请求当前站点已发布的 `data/latest.json`
+
+注意：
+
+- 这个按钮不会在浏览器里直接执行 Python 抓数脚本
+- GitHub Pages 是静态托管，网页按钮不能直接抓取并生成新文件
+- 如果你要真正生成新的数据，仍需本地运行一次更新脚本，然后把新的 `data/latest.json` 推到 GitHub
+
+## 本地生成新数据
 
 ```powershell
 & "C:\Users\Jason Yang\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" ".\scripts\update_dashboard.py"
 ```
 
-## 开启每日自动更新
+运行后会更新：
 
-以管理员或当前用户 PowerShell 执行：
+- `data/latest.json`
 
-```powershell
-.\scripts\register_daily_update.ps1
-```
+然后把仓库 push 到 GitHub，网页上的“更新数据”按钮就能重新加载到这份最新已发布数据。
 
-默认会在每天 `08:30` 运行一次更新脚本。
+## 为什么之前 GitHub 上无法显示
 
-## 数据说明
+主要有两个原因：
 
-- 看板每天运行一次更新逻辑，但不同权威来源的发布频率不同。
-- 因此页面展示的是“最新可得官方数据”，不是所有品类都严格日频。
-- 对于铜、锂等拥有明确官方缺口预测的品类，直接显示官方值。
-- 对于锑、镓、锗、钨等没有统一全球缺口口径的品类，显示的是基于公开信号的模型估算值，并在页面上单独标识。
+- 之前页面入口不是标准的 `index.html`
+- 之前的数据直接写回 HTML，结构和编码更容易在静态托管场景下出问题
+
+现在已经改成更适合 GitHub Pages 的静态结构：
+
+- `index.html` 负责展示
+- `data/latest.json` 负责存数据
+- `assets/app.js` 负责前端刷新

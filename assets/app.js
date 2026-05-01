@@ -1,34 +1,31 @@
-(function () {
-  const dataTag = document.getElementById("dashboard-data");
-  if (!dataTag) {
-    return;
+﻿const DATA_SCRIPT_URL = "./data/latest.js";
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.textContent = value;
   }
+}
 
-  const payload = JSON.parse(dataTag.textContent);
+function renderSources(sources) {
+  return sources
+    .map(
+      (source) =>
+        `<a class="pill" href="${source.url}" target="_blank" rel="noreferrer">${source.label}<span>${source.date}</span></a>`,
+    )
+    .join("");
+}
 
-  const setText = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.textContent = value;
-    }
-  };
+function renderCompanies(companies) {
+  return companies
+    .map(
+      (company) =>
+        `<span class="pill">${company.name}<span>${company.ticker}</span></span>`,
+    )
+    .join("");
+}
 
-  const renderSources = (sources) =>
-    sources
-      .map(
-        (source) =>
-          `<a class="pill" href="${source.url}" target="_blank" rel="noreferrer">${source.label}<span>${source.date}</span></a>`,
-      )
-      .join("");
-
-  const renderCompanies = (companies) =>
-    companies
-      .map(
-        (company) =>
-          `<span class="pill">${company.name}<span>${company.ticker}</span></span>`,
-      )
-      .join("");
-
+function renderDashboard(payload) {
   const rankingEl = document.getElementById("ranking-grid");
   const tableEl = document.getElementById("detail-table-body");
 
@@ -88,4 +85,51 @@
       `,
     )
     .join("");
-})();
+}
+
+function loadDataScript() {
+  return new Promise((resolve, reject) => {
+    delete window.DASHBOARD_DATA;
+
+    const oldScript = document.getElementById("dashboard-data-script");
+    if (oldScript) {
+      oldScript.remove();
+    }
+
+    const script = document.createElement("script");
+    script.id = "dashboard-data-script";
+    script.src = `${DATA_SCRIPT_URL}?t=${Date.now()}`;
+    script.onload = () => {
+      if (window.DASHBOARD_DATA) {
+        resolve(window.DASHBOARD_DATA);
+      } else {
+        reject(new Error("未找到已发布数据变量"));
+      }
+    };
+    script.onerror = () => reject(new Error("无法加载 data/latest.js"));
+    document.body.appendChild(script);
+  });
+}
+
+async function loadDashboardData() {
+  const statusEl = document.getElementById("refresh-status");
+  const buttonEl = document.getElementById("refresh-button");
+  statusEl.textContent = "正在加载已发布数据...";
+  buttonEl.disabled = true;
+
+  try {
+    const payload = await loadDataScript();
+    renderDashboard(payload);
+    statusEl.textContent = `已刷新，当前展示数据生成于 ${payload.meta.generated_at_local}`;
+  } catch (error) {
+    statusEl.textContent = `刷新失败：${error.message}`;
+  } finally {
+    buttonEl.disabled = false;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const buttonEl = document.getElementById("refresh-button");
+  buttonEl.addEventListener("click", loadDashboardData);
+  loadDashboardData();
+});

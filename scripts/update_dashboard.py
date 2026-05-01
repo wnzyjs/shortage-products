@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import re
@@ -10,14 +10,10 @@ from typing import Dict, List
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-
 ROOT = Path(__file__).resolve().parents[1]
-DASHBOARD_PATH = ROOT / "dashboard.html"
-DATA_TAG_PATTERN = re.compile(
-    r'(<script id="dashboard-data" type="application/json">)(.*?)(</script>)',
-    re.DOTALL,
-)
-
+DATA_DIR = ROOT / "data"
+DATA_JSON_PATH = DATA_DIR / "latest.json"
+DATA_JS_PATH = DATA_DIR / "latest.js"
 SSL_CONTEXT = ssl.create_default_context()
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CodexDashboard/1.0"
 
@@ -30,7 +26,6 @@ MICRON_HBM_URL = "https://investors.micron.com/news-releases/news-release-detail
 SK_HYNIX_HBM_URL = "https://news.skhynix.com/sk-hynix-begins-mass-production-of-worlds-first-hbm4-12-layer-samples/"
 SEMI_CHIP_URL = "https://www.semi.org/en/news-media-press-releases/global-semiconductor-manufacturing-industry-sees-investment-growth"
 HITACHI_ENERGY_URL = "https://www.hitachienergy.com/us/en/news-and-events/press-releases/2024/06/hitachi-energy-invests-additional-155-million-usd"
-RTX_GTF_URL = "https://www.rtx.com/news/news-center/2024/01/23/rtx-provides-2024-outlook"
 
 
 def fetch_text(url: str) -> str | None:
@@ -53,6 +48,7 @@ def extract_publish_date(text: str) -> str | None:
 
 
 def build_live_signals() -> Dict[str, Dict[str, str]]:
+  signals: Dict[str, Dict[str, str]] = {}
   iea_overview = fetch_text(IEA_OVERVIEW_URL) or ""
   iea_exec = fetch_text(IEA_EXEC_URL) or ""
   usgs_mcs = fetch_text(USGS_MCS_URL) or ""
@@ -62,14 +58,12 @@ def build_live_signals() -> Dict[str, Dict[str, str]]:
   sk_hynix_hbm = fetch_text(SK_HYNIX_HBM_URL) or ""
   semi_chip = fetch_text(SEMI_CHIP_URL) or ""
   hitachi_energy = fetch_text(HITACHI_ENERGY_URL) or ""
-  rtx_gtf = fetch_text(RTX_GTF_URL) or ""
 
-  signals: Dict[str, Dict[str, str]] = {}
   if iea_overview or iea_exec:
     signals["copper"] = {
       "current_gap_display": "2035隐含缺口 30%",
       "future_gap_display": "30% by 2035",
-      "driver": "IEA 指出铜在 2035 年可能出现 30% 的隐含供给缺口。",
+      "driver": "IEA 指出铜在当前项目管线下到 2035 年可能出现 30% 的隐含供给缺口。",
       "source_date": extract_publish_date(iea_overview) or "21 May 2025",
     }
     signals["lithium"] = {
@@ -131,14 +125,6 @@ def build_live_signals() -> Dict[str, Dict[str, str]]:
       "driver": "大型变压器交期依然偏长，制造瓶颈尚未消除。",
       "source_date": "2024",
     }
-  if rtx_gtf:
-    signals["aero_engine"] = {
-      "current_gap_display": "交付链瓶颈持续",
-      "future_gap_display": "2026前偏紧",
-      "driver": "航空发动机与关键部件短缺继续限制整机交付。",
-      "source_date": "2024",
-    }
-
   return signals
 
 
@@ -199,7 +185,7 @@ def build_commodities(signals: Dict[str, Dict[str, str]]) -> List[Commodity]:
     "gallium": {"name_cn": "镓", "name_en": "Gallium", "category": "射频 / 功率半导体", "current_gap_display": "价格同比 >20%", "future_gap_display": "模型估算 18%", "model": "模型估算", "drivers": ["USGS 将镓识别为高供应风险材料。", "半导体、电力电子和国防链条对镓依赖度高。", "出口许可制度意味着供应恢复并不等于风险消失。"], "sources": [{"label": "USGS Gallium/Germanium Study", "url": USGS_GA_GE_URL, "date": "19 November 2024"}, {"label": "USGS Mineral Commodity Summaries 2026", "url": USGS_MCS_URL, "date": "5 March 2026"}], "companies": [{"name": "中国铝业", "ticker": "601600.SH"}, {"name": "云铝股份", "ticker": "000807.SZ"}, {"name": "南山铝业", "ticker": "600219.SH"}], "concentration": 95, "policy": 92, "market": 70},
     "lithium": {"name_cn": "锂", "name_en": "Lithium", "category": "动力电池", "current_gap_display": "近端宽松，远端转缺", "future_gap_display": "40% by 2035", "model": "官方预测", "drivers": ["IEA 指出近端市场偏宽松，但 2030 年代可能重新转入短缺。", "新能源车与储能扩张推动需求增速维持高位。", "新项目开发前景优于铜，但仍难完全填平长期缺口。"], "sources": [{"label": "IEA Critical Minerals Outlook 2025", "url": IEA_EXEC_URL, "date": "21 May 2025"}], "companies": [{"name": "天齐锂业", "ticker": "002466.SZ"}, {"name": "赣锋锂业", "ticker": "002460.SZ"}, {"name": "盛新锂能", "ticker": "002240.SZ"}], "concentration": 78, "policy": 48, "market": 62},
     "uranium": {"name_cn": "铀", "name_en": "Uranium", "category": "核电燃料", "current_gap_display": "矿山供给仅覆盖约90%", "future_gap_display": "2030需求 +28%", "model": "官方趋势 + 模型估算", "drivers": ["全球核电复兴推升中长期燃料需求。", "矿山供给未完全覆盖反应堆需求。", "2030 前需求增长明确，扩产周期长。"], "sources": [{"label": "World Nuclear Association", "url": WNA_URANIUM_URL, "date": "23 August 2024"}], "companies": [{"name": "中广核矿业", "ticker": "1164.HK"}, {"name": "中核国际", "ticker": "2302.HK"}, {"name": "中国广核", "ticker": "003816.SZ"}], "concentration": 82, "policy": 70, "market": 82},
-    "graphite": {"name_cn": "石墨", "name_en": "Graphite", "category": "负极材料 / 储能", "current_gap_display": "集中度风险高", "future_gap_display": "模型估算 12%", "model": "模型估算", "drivers": ["储能和动力电池继续带动需求增长。", "IEA 认为总量有望覆盖，但供应集中度仍是脆弱点。", "一旦出口限制升级，产业链扰动会被放大。"], "sources": [{"label": "IEA Critical Minerals Outlook 2025", "url": IEA_EXEC_URL, "date": "21 May 2025"}], "companies": [{"name": "中国宝安", "ticker": "000009.SZ"}, {"name": "中科电气", "ticker": "300035.SZ"}, {"name": "翔丰华", "ticker": "300890.SZ"}], "concentration": 90, "policy": 80, "market": 52},
+    "graphite": {"name_cn": "石墨", "name_en": "Graphite", "category": "负极材料 / 储能", "current_gap_display": "集中度风险高", "future_gap_display": "模型估算 12%", "model": "模型估算", "drivers": ["储能和动力电池继续带动需求增长。", "IEA 认为总量有望覆盖，但供应集中度仍是脆弱点。", "一旦出口限制升级，产业链扰动会被放大。"], "sources": [{"label": "IEA Critical Minerals Outlook 2025", "url": IEA_EXEC_URL, "date": "21 May 2025"}], "companies": [{"name": "中国宝安", "ticker": "000009.SZ"}, {"name": "中科电气", "ticker": "300035.SZ"}, {"name": "翔丰华", "ticker": "300890.SZ"}], "concentration": 90, "policy": 80, "market": 52}
   }
 
   items = []
@@ -226,13 +212,13 @@ def build_payload() -> Dict[str, object]:
   return {
     "meta": {
       "generated_at_local": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-      "refresh_note": "每日脚本已执行；若源站无新版本，则保留上次最新可得官方数值。",
-      "mode_label": "每日自动检查 + 最新可得数据",
+      "refresh_note": "点击网页按钮会重新加载已发布的 latest.js；若要生成新数据，请本地运行更新脚本后重新发布。",
+      "mode_label": "手动刷新页面数据"
     },
     "summary": {
       "top_risk_name": items[0].name_cn,
       "average_score": round(sum(item.shortage_score for item in items) / len(items)),
-      "max_future_gap": f"{max_gap_item.name_cn} {max_gap_item.future_gap_display}",
+      "max_future_gap": f"{max_gap_item.name_cn} {max_gap_item.future_gap_display}"
     },
     "items": [{
       "key": item.key,
@@ -245,20 +231,18 @@ def build_payload() -> Dict[str, object]:
       "score_model": item.score_model,
       "key_drivers": item.key_drivers,
       "sources": item.sources,
-      "china_listed_companies": item.china_listed_companies,
-    } for item in items],
+      "china_listed_companies": item.china_listed_companies
+    } for item in items]
   }
 
 
 def main() -> None:
-  html = DASHBOARD_PATH.read_text(encoding="utf-8")
-  updated = DATA_TAG_PATTERN.sub(
-    lambda match: f"{match.group(1)}{json.dumps(build_payload(), ensure_ascii=False)}{match.group(3)}",
-    html,
-    count=1,
-  )
-  DASHBOARD_PATH.write_text(updated, encoding="utf-8")
-  print(f"Dashboard updated: {DASHBOARD_PATH}")
+  payload = build_payload()
+  DATA_DIR.mkdir(exist_ok=True)
+  DATA_JSON_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+  DATA_JS_PATH.write_text("window.DASHBOARD_DATA = " + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n", encoding="utf-8")
+  print(f"Data written: {DATA_JSON_PATH}")
+  print(f"Script written: {DATA_JS_PATH}")
 
 
 if __name__ == "__main__":
