@@ -1,4 +1,5 @@
-﻿const DATA_SCRIPT_URL = "./data/latest.js";
+const DATA_SCRIPT_URL = "./data/latest.js";
+const GITHUB_ACTIONS_URL = "";
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -128,8 +129,18 @@ async function loadDashboardData() {
   }
 }
 
+function openActionsPage() {
+  const statusEl = document.getElementById("refresh-status");
+  if (GITHUB_ACTIONS_URL) {
+    window.open(GITHUB_ACTIONS_URL, "_blank", "noopener,noreferrer");
+    statusEl.textContent = "已打开 GitHub Actions，请先运行云端更新工作流。";
+    return;
+  }
+  statusEl.textContent = "请先在 GitHub 仓库的 Actions 页面运行 Update Dashboard Data，再回来点“刷新已发布数据”。";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const buttonEl = document.getElementById("refresh-button");
-  buttonEl.addEventListener("click", loadDashboardData);
+  document.getElementById("refresh-button").addEventListener("click", loadDashboardData);
+  document.getElementById("trigger-update-button").addEventListener("click", openActionsPage);
   loadDashboardData();
 });

@@ -517,3 +517,33 @@ tbody tr:last-child td {
     text-align: left;
   }
 }
+
+.hero-note {
+  margin-top: 16px;
+  max-width: 920px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 250, 242, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(247, 247, 242, 0.9);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.secondary-button {
+  background: linear-gradient(135deg, #2e6f72 0%, #116466 100%);
+  box-shadow: 0 12px 28px rgba(17, 100, 102, 0.22);
+}
+
+@media (max-width: 720px) {
+  .button-row {
+    justify-content: flex-start;
+  }
+}
