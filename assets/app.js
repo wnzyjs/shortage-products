@@ -1,5 +1,5 @@
-const DATA_SCRIPT_URL = "./data/latest.js";
-const GITHUB_ACTIONS_URL = "";
+﻿const DATA_SCRIPT_URL = "./data/latest.js";
+const GITHUB_ACTIONS_URL = "https://github.com/wnzyjs/shortage-dashboard/actions/workflows/update-dashboard.yml";
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -144,3 +144,4 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("trigger-update-button").addEventListener("click", openActionsPage);
   loadDashboardData();
 });
+
